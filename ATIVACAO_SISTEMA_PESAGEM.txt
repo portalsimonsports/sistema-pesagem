@@ -1,69 +1,35 @@
-PORTAL SIMONSPORTS — SISTEMA DE PESAGEM NO GITHUB PAGES
-Versão: 2026-07-13
+PORTAL SIMONSPORTS — SISTEMA DE PESAGEM
+ATIVAÇÃO DO ACESSO PELA PLANILHA + FIREBASE
+Versão: 13/07/2026
 
-ESTRUTURA IMPLEMENTADA
-======================
-1. index.html
-   - Interface completa e responsiva.
-   - Login por e-mail + código de acesso pelo Firebase Authentication.
-   - Usuários pendentes, ativos e bloqueados.
-   - Controle dos perfis permitidos.
-   - Pesagem, desconto do celular, metas, água, histórico, gráficos e comparativos.
+1. No Apps Script, substitua todo o GS pelo arquivo completo entregue no ChatGPT:
+CODE_GS_PESAGEM_FIREBASE_ACESSO_COMPLETO_13-07-2026.txt
 
-2. firebase/firestore.rules
-   - O usuário comum cria somente a própria solicitação, inicialmente bloqueada.
-   - O administrador portalsimonsports@gmail.com pode ativar usuários e definir perfis.
-   - Nenhum dado de pesagem é armazenado no Firestore; o Firestore controla apenas acessos.
+2. Crie ou substitua o arquivo HTML chamado bridge com o conteúdo de:
+BRIDGE_HTML_PESAGEM_FIREBASE_13-07-2026.txt
 
-3. apps-script/PSS_PESAGEM_BRIDGE_COMPLETO.txt
-   - Valida o token Firebase no servidor.
-   - Valida o documento usuarios_pesagem/{uid}.
-   - Restringe cada usuário aos perfis liberados.
-   - Reutiliza as funções existentes do Sistema de Pesagem.
+3. Execute uma vez:
+MIGRAR_ESTRUTURA_USUARIOS_ACESSO
 
-4. apps-script/bridge.html.txt
-   - Ponte segura entre o GitHub Pages e google.script.run.
-   - A tela principal permanece no GitHub; o Apps Script funciona somente como base/API.
+A aba USUARIOS_ACESSO passará a usar:
+ATIVO | NOME | EMAIL | CODIGO_ACESSO | PERFIL_ACESSO | SETOR | PERMISSAO_PESAGEM | PERMISSAO_CONFIG | UID_FIREBASE | ULTIMO_ACESSO | OBS
 
-ATIVAÇÃO NECESSÁRIA FORA DO GITHUB
-==================================
-A integração exige três configurações que não podem ser aplicadas por um commit no repositório:
+4. Preencha EMAIL e mantenha CODIGO_ACESSO com no mínimo 6 caracteres.
 
-A) FIREBASE AUTHENTICATION
-- Firebase Console > Authentication > Sign-in method.
-- Ativar E-mail/senha.
+5. No Firebase Authentication, ative E-mail/senha.
 
-B) FIRESTORE
-- Firebase Console > Firestore Database > Rules.
-- Publicar o conteúdo de firebase/firestore.rules.
+6. No Apps Script, implante uma nova versão do Web App mantendo o mesmo endereço /exec.
 
-C) GOOGLE APPS SCRIPT
-- No projeto atual do Sistema de Pesagem:
-  1. Substituir a função doGet pela versão do arquivo PSS_PESAGEM_BRIDGE_COMPLETO.txt.
-  2. Adicionar as demais funções desse arquivo.
-  3. Criar o arquivo HTML "bridge".
-  4. Colar nele o conteúdo de bridge.html.txt.
-  5. Executar PSS_PESAGEM_DIAGNOSTICAR_BRIDGE.
-  6. Implantar > Gerenciar implantações > Editar > Nova versão > Implantar.
-- O endereço do Web App pode continuar o mesmo.
+7. Execute:
+SINCRONIZAR_USUARIOS_FIREBASE
 
-D) GITHUB PAGES
-- Repositório > Settings > Pages.
-- Source: GitHub Actions.
+8. Para diagnóstico, execute:
+DIAGNOSTICAR_ACESSO_FIREBASE_PESAGEM
 
-PRIMEIRO ACESSO
-===============
-- Na tela publicada, usar portalsimonsports@gmail.com.
-- Clicar em "Solicitar acesso" para criar o primeiro usuário.
-- Para esse e-mail, o documento é criado automaticamente como administrador ativo.
-- Depois, usar o botão "Acessos" para liberar os demais e definir:
-  * = todos os perfis
-  ou
-  Luis Carlos, Daniela, Ana Luisa
-
-SEGURANÇA
-=========
-- O código de acesso é a senha do Firebase Authentication e não fica no HTML.
-- O Apps Script valida o Firebase ID Token antes de ler ou alterar a planilha.
-- A autorização por perfil também é aplicada no Apps Script, não apenas na interface.
-- O sistema não expõe o segredo interno da planilha ao navegador.
+Regras:
+- ADMIN visualiza todos os perfis.
+- OPERADOR visualiza o perfil cujo nome corresponde ao campo NOME.
+- PERMISSAO_PESAGEM controla pesagem, água e histórico.
+- PERMISSAO_CONFIG controla meta, altura e administração de acessos.
+- O login valida a planilha, cria ou valida a conta Firebase e grava UID_FIREBASE e ULTIMO_ACESSO.
+- Não altere CODIGO_ACESSO depois da primeira sincronização sem também redefinir a senha no Firebase Authentication.
