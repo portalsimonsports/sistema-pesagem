@@ -6,7 +6,8 @@
 <meta content="#071426" name="theme-color"/>
 <meta content="Sistema privado de pesagem e acompanhamento do Portal SimonSports." name="description"/>
 <meta content="noindex,nofollow" name="robots"/>
-<title>PSS — Sistema de Pesagem</title><link href="assets/styles.css" rel="stylesheet"/>
+<title>PSS — Sistema de Pesagem</title>
+<link href="assets/styles.css?v=20260713b" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -19,10 +20,14 @@
 <h1>Sistema de Pesagem</h1>
 <p>Acesso privado por e-mail e código. O código é protegido pelo Firebase Authentication.</p>
 <div class="field"><label for="loginEmail">E-mail</label><input autocomplete="username" class="input" id="loginEmail" placeholder="seuemail@exemplo.com" type="email"/></div>
-<div class="field"><label for="loginCode">Código de acesso</label><input autocomplete="current-password" class="input" id="loginCode" minlength="6" placeholder="Mínimo de 6 caracteres" type="password"/></div>
-<div class="login-actions"><button class="btn" id="btnLogin">Entrar</button><button class="btn secondary" id="btnRegister">Solicitar acesso</button></div>
+<div class="field">
+<label for="loginCode">Código de acesso</label>
+<input aria-describedby="codeHelp" autocomplete="current-password" class="input" id="loginCode" minlength="6" placeholder="Crie ou informe um código" type="password"/>
+<div class="hint" id="codeHelp">Para solicitar acesso pela primeira vez, crie um código com no mínimo 6 caracteres. Guarde esse código para as próximas entradas.</div>
+</div>
+<div class="login-actions"><button class="btn" id="btnLogin" type="button">Entrar</button><button class="btn secondary" id="btnRegister" type="button">Solicitar acesso</button></div>
 <div class="notice hidden" id="loginMsg" style="margin-top:14px"></div>
-<div class="login-foot">Novos cadastros ficam pendentes até a liberação do administrador. A página não armazena o código no GitHub.</div>
+<div class="login-foot">Novos cadastros ficam pendentes até a liberação do administrador. O código não é armazenado no GitHub.</div>
 </div>
 </section>
 <main class="shell hidden" id="appView">
@@ -44,6 +49,7 @@
 <section class="card hidden" id="adminPanel"><div class="section-title"><div><h2>Controle de acessos</h2><p>Ative, bloqueie e defina os perfis permitidos para cada usuário.</p></div><button class="btn secondary" id="btnReloadUsers">Atualizar lista</button></div><div id="adminUsers"></div></section>
 <iframe class="hidden" id="gasBridge" title="Integração segura com a base"></iframe>
 </main>
-<script src="assets/app.js"></script>
+<script src="assets/app.js?v=20260713b"></script>
+<script src="assets/register-fix.js?v=20260713b"></script>
 </body>
 </html>
