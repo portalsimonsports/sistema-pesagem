@@ -1,214 +1,49 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0b1f3a">
-  <meta name="description" content="Acesso ao Sistema de Pesagem do Portal SimonSports.">
-  <meta name="robots" content="noindex, nofollow">
-
-  <title>Sistema de Pesagem | Portal SimonSports</title>
-
-  <style>
-    :root {
-      color-scheme: dark;
-      --fundo-1: #07182d;
-      --fundo-2: #123f6b;
-      --cartao: rgba(255, 255, 255, 0.10);
-      --borda: rgba(255, 255, 255, 0.22);
-      --texto: #ffffff;
-      --texto-suave: rgba(255, 255, 255, 0.78);
-      --botao: #ffffff;
-      --botao-texto: #0b1f3a;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      margin: 0;
-      min-height: 100%;
-    }
-
-    body {
-      min-height: 100vh;
-      min-height: 100dvh;
-      font-family: Arial, Helvetica, sans-serif;
-      background: linear-gradient(135deg, var(--fundo-1), var(--fundo-2));
-      color: var(--texto);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: max(24px, env(safe-area-inset-top))
-               max(18px, env(safe-area-inset-right))
-               max(24px, env(safe-area-inset-bottom))
-               max(18px, env(safe-area-inset-left));
-    }
-
-    .card {
-      width: 100%;
-      max-width: 440px;
-      background: var(--cartao);
-      border: 1px solid var(--borda);
-      border-radius: 20px;
-      padding: 30px 22px;
-      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-
-    .marca {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 30px;
-      padding: 6px 12px;
-      margin-bottom: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.24);
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    h1 {
-      margin: 0 0 12px;
-      font-size: clamp(25px, 7vw, 32px);
-      line-height: 1.2;
-    }
-
-    p {
-      margin: 0;
-      font-size: 15px;
-      line-height: 1.55;
-      color: var(--texto-suave);
-    }
-
-    .status {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      min-height: 24px;
-      margin: 22px 0;
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    .spinner {
-      width: 18px;
-      height: 18px;
-      border: 2px solid rgba(255, 255, 255, 0.30);
-      border-top-color: #ffffff;
-      border-radius: 50%;
-      animation: girar 0.8s linear infinite;
-    }
-
-    @keyframes girar {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    .botao {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      min-height: 52px;
-      padding: 14px 18px;
-      border: 0;
-      border-radius: 13px;
-      background: var(--botao);
-      color: var(--botao-texto);
-      font: inherit;
-      font-weight: 800;
-      text-decoration: none;
-      cursor: pointer;
-      touch-action: manipulation;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
-    }
-
-    .botao:focus-visible {
-      outline: 3px solid rgba(255, 255, 255, 0.65);
-      outline-offset: 4px;
-    }
-
-    .aviso {
-      margin-top: 16px;
-      font-size: 12px;
-      line-height: 1.5;
-      color: var(--texto-suave);
-    }
-
-    noscript p {
-      margin: 18px 0 0;
-      font-size: 13px;
-    }
-
-    @media (max-width: 380px) {
-      .card {
-        padding: 25px 18px;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .spinner {
-        animation: none;
-      }
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<meta content="#071426" name="theme-color"/>
+<meta content="Sistema privado de pesagem e acompanhamento do Portal SimonSports." name="description"/>
+<meta content="noindex,nofollow" name="robots"/>
+<title>PSS — Sistema de Pesagem</title><link href="assets/styles.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <main class="card" aria-labelledby="titulo-principal">
-    <div class="marca">Portal SimonSports</div>
-
-    <h1 id="titulo-principal">Sistema de Pesagem</h1>
-    <p>Você será encaminhado para o sistema de forma automática.</p>
-
-    <div class="status" role="status" aria-live="polite">
-      <span class="spinner" aria-hidden="true"></span>
-      <span id="mensagem-status">Preparando acesso...</span>
-    </div>
-
-    <a
-      class="botao"
-      id="abrir-sistema"
-      href="https://script.google.com/macros/s/AKfycbzM4o4WTSWrRAxronWPheQVaUIZnYMNIcJrz6ivOzV2NtvO3JuGRuSH5CHCIBfvRBBdmw/exec"
-    >
-      Abrir Sistema de Pesagem
-    </a>
-
-    <div class="aviso">
-      Caso o redirecionamento automático não funcione no celular, toque no botão acima.
-    </div>
-
-    <noscript>
-      <p>O JavaScript está desativado. Utilize o botão para abrir o sistema.</p>
-    </noscript>
-  </main>
-
-  <script>
-    (() => {
-      'use strict';
-
-      const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzM4o4WTSWrRAxronWPheQVaUIZnYMNIcJrz6ivOzV2NtvO3JuGRuSH5CHCIBfvRBBdmw/exec';
-      const mensagemStatus = document.getElementById('mensagem-status');
-      const botaoAbrir = document.getElementById('abrir-sistema');
-
-      botaoAbrir.addEventListener('click', () => {
-        mensagemStatus.textContent = 'Abrindo o sistema...';
-      });
-
-      window.setTimeout(() => {
-        mensagemStatus.textContent = 'Redirecionando...';
-        window.location.replace(WEB_APP_URL);
-      }, 1200);
-    })();
-  </script>
+<section class="login-wrap" id="loginView">
+<div class="login-card">
+<div class="chip">Portal SimonSports</div>
+<h1>Sistema de Pesagem</h1>
+<p>Acesso privado por e-mail e código. O código é protegido pelo Firebase Authentication.</p>
+<div class="field"><label for="loginEmail">E-mail</label><input autocomplete="username" class="input" id="loginEmail" placeholder="seuemail@exemplo.com" type="email"/></div>
+<div class="field"><label for="loginCode">Código de acesso</label><input autocomplete="current-password" class="input" id="loginCode" minlength="6" placeholder="Mínimo de 6 caracteres" type="password"/></div>
+<div class="login-actions"><button class="btn" id="btnLogin">Entrar</button><button class="btn secondary" id="btnRegister">Solicitar acesso</button></div>
+<div class="notice hidden" id="loginMsg" style="margin-top:14px"></div>
+<div class="login-foot">Novos cadastros ficam pendentes até a liberação do administrador. A página não armazena o código no GitHub.</div>
+</div>
+</section>
+<main class="shell hidden" id="appView">
+<header class="topbar"><div class="brand"><b>PSS — Pesagem</b><span>Histórico, metas, hidratação e comparativos</span></div><div class="userbox"><span class="statuschip" id="bridgeStatus"><span class="dot"></span><span>Conectando à base…</span></span><span class="chip" id="userEmail"></span><button class="btn secondary hidden" id="btnAdmin">Acessos</button><button class="btn secondary" id="btnLogout">Sair</button></div></header>
+<div class="notice hidden" id="appMsg" style="margin-top:12px"></div>
+<section class="card">
+<div class="section-title"><div><h2>Selecione o perfil</h2><p>Somente os perfis liberados para o seu acesso são exibidos.</p></div><span class="chip" id="profileCount">0 perfil(is)</span></div>
+<div class="profiles" id="profiles"></div>
+<div class="badgetray" style="margin-top:10px"><span class="badge" id="selectedPill">Selecionado: —</span><span class="badge" id="deviceSuggestion">Aparelho detectado: —</span></div>
+<div class="grid g2" style="margin-top:12px"><div class="field"><label for="pesoBruto">Peso bruto (kg)</label><input class="input" id="pesoBruto" inputmode="decimal" placeholder="Ex.: 79,4"/><div class="hint">Aceita vírgula ou ponto.</div></div><div class="field"><label for="obs">Observação</label><input class="input" id="obs" placeholder="Ex.: jejum / após treino"/><div class="hint">Opcional.</div></div></div>
+<div class="subcard"><div class="grid g3"><label class="checkrow"><input id="comCelular" type="checkbox"/><span><b>Registro fotográfico / celular na mão</b><br/><small style="color:var(--muted)">O peso do aparelho será descontado.</small></span></label><div class="field"><label for="modeloSel">Modelo do aparelho</label><select disabled id="modeloSel"><option value="">Selecione…</option></select><div class="hint" id="deviceWeightHint">Peso do aparelho: —</div></div><div class="field"><label for="pesoCel">Peso do aparelho (kg)</label><input class="input" disabled id="pesoCel" inputmode="decimal" placeholder="Ex.: 0,168"/></div></div></div>
+<div class="badgetray" style="margin-top:10px"><span class="badge" id="netWeightPill">Peso líquido: —</span></div>
+<div class="actions"><button class="btn" disabled id="btnSaveWeight">Salvar pesagem</button><button class="btn secondary" id="btnClear">Limpar</button></div>
+</section>
+<section class="card"><div class="section-title"><div><h2>Indicadores do perfil</h2><p>Altura e meta são gravadas na configuração do perfil.</p></div></div><div class="grid g4"><div class="kpi"><small>Último peso</small><strong id="kpiLast">—</strong><small>kg</small></div><div class="kpi"><small>IMC</small><strong id="kpiImc">—</strong><small>índice</small></div><div class="kpi"><small>Menor peso</small><strong id="kpiMin">—</strong><small id="kpiMinDate">—</small></div><div class="kpi"><small>Maior peso</small><strong id="kpiMax">—</strong><small id="kpiMaxDate">—</small></div></div><div class="grid g3" style="margin-top:11px"><div class="field"><label for="altura">Altura (m)</label><input class="input" id="altura" inputmode="decimal" placeholder="1,80"/></div><div class="field"><label for="meta">Meta de peso (kg)</label><input class="input" id="meta" inputmode="decimal" placeholder="75"/></div><div class="field"><label>&nbsp;</label><button class="btn" disabled id="btnSaveGoal" style="width:100%">Salvar meta e altura</button></div></div></section>
+<section class="card"><div class="section-title"><div><h2>Água</h2><p>Registre o consumo diário do perfil selecionado.</p></div><span class="chip"><b id="waterToday">0</b>&nbsp;/&nbsp;<span id="waterGoal">—</span>&nbsp;ml</span></div><div class="water-actions"><button class="btn secondary waterBtn" data-ml="200" disabled>+ 200 ml</button><button class="btn secondary waterBtn" data-ml="300" disabled>+ 300 ml</button><button class="btn secondary waterBtn" data-ml="500" disabled>+ 500 ml</button><input class="input" id="waterCustom" inputmode="numeric" placeholder="Outro valor" style="width:140px"/><button class="btn secondary" disabled id="btnWaterCustom">Adicionar</button></div><div class="hint" id="waterStatus">Selecione um perfil.</div></section>
+<section class="card"><div class="section-title"><div><h2>Comparativos</h2><p>Comparação automática por período e por dia/mês entre anos.</p></div></div><div class="grid g3"><div class="field"><label for="compareDays">Período</label><select id="compareDays"><option value="7">7 dias</option><option value="15">15 dias</option><option selected value="30">30 dias</option><option value="90">90 dias</option><option value="180">180 dias</option><option value="365">365 dias</option></select></div><label class="checkrow" style="align-self:end;min-height:43px"><input checked id="fixWeekday" type="checkbox"/><span>Comparar pelo mesmo dia da semana</span></label><div class="grid g2"><div class="field"><label for="compareDay">Dia</label><input class="input" id="compareDay" inputmode="numeric" placeholder="31"/></div><div class="field"><label for="compareMonth">Mês</label><input class="input" id="compareMonth" inputmode="numeric" placeholder="12"/></div></div></div><div class="badgetray" id="compareBadges" style="margin-top:11px"><span class="badge" id="bToday">Hoje: —</span><span class="badge" id="bTarget">Alvo: —</span><span class="badge" id="bDelta">Δ: —</span></div><div class="hint" id="compareHint">Selecione um perfil.</div><div class="badgetray" style="margin-top:8px"><span class="badge" id="bYearNow">Ano atual: —</span><span class="badge" id="bYearPrev">Ano anterior: —</span><span class="badge" id="bYearDelta">Δ ano: —</span></div><div class="hint" id="compareYearHint">Informe dia e mês para comparar.</div></section>
+<section class="card"><div class="section-title"><div><h2>Histórico</h2><p>Últimos registros de peso e hidratação.</p></div></div><div class="tablewrap"><table><thead><tr><th>Data</th><th class="num">Peso (kg)</th><th class="num">Água (ml)</th></tr></thead><tbody id="historyBody"><tr><td colspan="3" style="color:var(--muted)">Selecione um perfil.</td></tr></tbody></table></div><div class="charts" style="margin-top:12px"><div class="chartbox"><canvas id="weightChart"></canvas></div><div class="chartbox"><canvas id="waterChart"></canvas></div></div></section>
+<section class="card hidden" id="adminPanel"><div class="section-title"><div><h2>Controle de acessos</h2><p>Ative, bloqueie e defina os perfis permitidos para cada usuário.</p></div><button class="btn secondary" id="btnReloadUsers">Atualizar lista</button></div><div id="adminUsers"></div></section>
+<iframe class="hidden" id="gasBridge" title="Integração segura com a base"></iframe>
+</main>
+<script src="assets/app.js"></script>
 </body>
 </html>
