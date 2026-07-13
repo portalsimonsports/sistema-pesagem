@@ -2,90 +2,213 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1f3a">
+  <meta name="description" content="Acesso ao Sistema de Pesagem do Portal SimonSports.">
+  <meta name="robots" content="noindex, nofollow">
 
-  <title>Portal SimonSports</title>
-
-  <!-- Redirecionamento automático para o Web App do Google Apps Script -->
-  <meta http-equiv="refresh" content="0; url=https://script.google.com/macros/s/AKfycbzM4o4WTSWrRAxronWPheQVaUIZnYMNIcJrz6ivOzV2NtvO3JuGRuSH5CHCIBfvRBBdmw/exec">
+  <title>Sistema de Pesagem | Portal SimonSports</title>
 
   <style>
+    :root {
+      color-scheme: dark;
+      --fundo-1: #07182d;
+      --fundo-2: #123f6b;
+      --cartao: rgba(255, 255, 255, 0.10);
+      --borda: rgba(255, 255, 255, 0.22);
+      --texto: #ffffff;
+      --texto-suave: rgba(255, 255, 255, 0.78);
+      --botao: #ffffff;
+      --botao-texto: #0b1f3a;
+    }
+
     * {
       box-sizing: border-box;
     }
 
+    html,
     body {
       margin: 0;
+      min-height: 100%;
+    }
+
+    body {
       min-height: 100vh;
+      min-height: 100dvh;
       font-family: Arial, Helvetica, sans-serif;
-      background: linear-gradient(135deg, #0b1f3a, #143d66);
-      color: #ffffff;
+      background: linear-gradient(135deg, var(--fundo-1), var(--fundo-2));
+      color: var(--texto);
       display: flex;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 24px;
+      padding: max(24px, env(safe-area-inset-top))
+               max(18px, env(safe-area-inset-right))
+               max(24px, env(safe-area-inset-bottom))
+               max(18px, env(safe-area-inset-left));
     }
 
     .card {
       width: 100%;
-      max-width: 420px;
-      background: rgba(255, 255, 255, 0.10);
-      border: 1px solid rgba(255, 255, 255, 0.20);
-      border-radius: 18px;
-      padding: 28px 22px;
-      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
-      backdrop-filter: blur(8px);
+      max-width: 440px;
+      background: var(--cartao);
+      border: 1px solid var(--borda);
+      border-radius: 20px;
+      padding: 30px 22px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .marca {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 30px;
+      padding: 6px 12px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
 
     h1 {
       margin: 0 0 12px;
-      font-size: 24px;
-      line-height: 1.25;
+      font-size: clamp(25px, 7vw, 32px);
+      line-height: 1.2;
     }
 
     p {
-      margin: 0 0 20px;
+      margin: 0;
       font-size: 15px;
-      line-height: 1.5;
-      opacity: 0.92;
+      line-height: 1.55;
+      color: var(--texto-suave);
     }
 
-    a {
-      display: inline-block;
+    .status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 24px;
+      margin: 22px 0;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.30);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: girar 0.8s linear infinite;
+    }
+
+    @keyframes girar {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .botao {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       width: 100%;
-      max-width: 280px;
+      min-height: 52px;
       padding: 14px 18px;
-      border-radius: 12px;
-      background: #ffffff;
-      color: #0b1f3a;
-      font-weight: bold;
+      border: 0;
+      border-radius: 13px;
+      background: var(--botao);
+      color: var(--botao-texto);
+      font: inherit;
+      font-weight: 800;
       text-decoration: none;
+      cursor: pointer;
+      touch-action: manipulation;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
     }
 
-    .small {
+    .botao:focus-visible {
+      outline: 3px solid rgba(255, 255, 255, 0.65);
+      outline-offset: 4px;
+    }
+
+    .aviso {
       margin-top: 16px;
       font-size: 12px;
-      opacity: 0.75;
+      line-height: 1.5;
+      color: var(--texto-suave);
+    }
+
+    noscript p {
+      margin: 18px 0 0;
+      font-size: 13px;
+    }
+
+    @media (max-width: 380px) {
+      .card {
+        padding: 25px 18px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .spinner {
+        animation: none;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="card">
-    <h1>Portal SimonSports</h1>
-    <p>Redirecionando para o sistema...</p>
+  <main class="card" aria-labelledby="titulo-principal">
+    <div class="marca">Portal SimonSports</div>
 
-    <a href="https://script.google.com/macros/s/AKfycbzM4o4WTSWrRAxronWPheQVaUIZnYMNIcJrz6ivOzV2NtvO3JuGRuSH5CHCIBfvRBBdmw/exec">
-      Abrir Sistema
+    <h1 id="titulo-principal">Sistema de Pesagem</h1>
+    <p>Você será encaminhado para o sistema de forma automática.</p>
+
+    <div class="status" role="status" aria-live="polite">
+      <span class="spinner" aria-hidden="true"></span>
+      <span id="mensagem-status">Preparando acesso...</span>
+    </div>
+
+    <a
+      class="botao"
+      id="abrir-sistema"
+      href="https://script.google.com/macros/s/AKfycbzM4o4WTSWrRAxronWPheQVaUIZnYMNIcJrz6ivOzV2NtvO3JuGRuSH5CHCIBfvRBBdmw/exec"
+    >
+      Abrir Sistema de Pesagem
     </a>
 
-    <div class="small">
-      Caso o redirecionamento não aconteça automaticamente, toque no botão acima.
+    <div class="aviso">
+      Caso o redirecionamento automático não funcione no celular, toque no botão acima.
     </div>
+
+    <noscript>
+      <p>O JavaScript está desativado. Utilize o botão para abrir o sistema.</p>
+    </noscript>
   </main>
 
   <script>
-    window.location.replace("https://script.google.com/macros/s/AKfycbzM4o4WTSWrRAxronWPheQVaUIZnYMNIcJrz6ivOzV2NtvO3JuGRuSH5CHCIBfvRBBdmw/exec");
+    (() => {
+      'use strict';
+
+      const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzM4o4WTSWrRAxronWPheQVaUIZnYMNIcJrz6ivOzV2NtvO3JuGRuSH5CHCIBfvRBBdmw/exec';
+      const mensagemStatus = document.getElementById('mensagem-status');
+      const botaoAbrir = document.getElementById('abrir-sistema');
+
+      botaoAbrir.addEventListener('click', () => {
+        mensagemStatus.textContent = 'Abrindo o sistema...';
+      });
+
+      window.setTimeout(() => {
+        mensagemStatus.textContent = 'Redirecionando...';
+        window.location.replace(WEB_APP_URL);
+      }, 1200);
+    })();
   </script>
 </body>
 </html>
