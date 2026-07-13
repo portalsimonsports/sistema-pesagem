@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PSS Pesagem — Bridge</title>
+</head>
+<body>
+<script>
+(() => {
+  "use strict";
+
+  const ALLOWED_ORIGINS = new Set([
+    "https://portalsimonsports.github.io",
+    "https://pesagem.portalsimonsports.com"
+  ]);
+
+  function send(target, message) {
+    try {
+      target.postMessage(message, "*");
+    } catch (err) {}
+  }
+
+  window.addEventListener("message", event => {
+    if (!ALLOWED_ORIGINS.has(event.origin)) return;
+
+    const data = event.data || {};
+    if (data.type !== "PSS_BRIDGE_CALL" || !data.id || !data.request) return;
+
+    google.script.run
+      .withSuccessHandler(result => {
+        send(event.source, {
+          type: "PSS_BRIDGE_RESPONSE",
+          id: data.id,
+          ok: true,
+          result
+        });
+      })
+      .withFailureHandler(error => {
+        send(event.source, {
+          type: "PSS_BRIDGE_RESPONSE",
+          id: data.id,
+          ok: false,
+          error: String(error && error.message ? error.message : error || "Falha na API.")
+        });
+      })
+      .PSS_PESAGEM_bridgeCall(data.request);
+  });
+
+  send(window.parent, { type: "PSS_BRIDGE_READY" });
+})();
+</script>
+</body>
+</html>
