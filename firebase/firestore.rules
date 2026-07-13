@@ -1,0 +1,60 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isMasterEmail() {
+      return signedIn()
+        && request.auth.token.email == "portalsimonsports@gmail.com";
+    }
+
+    function ownAccessExists() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/usuarios_pesagem/$(request.auth.uid));
+    }
+
+    function ownAccess() {
+      return get(/databases/$(database)/documents/usuarios_pesagem/$(request.auth.uid)).data;
+    }
+
+    function isPesagemAdmin() {
+      return ownAccessExists()
+        && ownAccess().ativo == true
+        && ownAccess().admin == true;
+    }
+
+    match /usuarios_pesagem/{uid} {
+      allow create: if isSelf(uid)
+        && request.resource.data.email == request.auth.token.email
+        && (
+          (
+            isMasterEmail()
+            && request.resource.data.ativo == true
+            && request.resource.data.admin == true
+          )
+          ||
+          (
+            !isMasterEmail()
+            && request.resource.data.ativo == false
+            && request.resource.data.admin == false
+          )
+        );
+
+      allow get: if isSelf(uid) || isPesagemAdmin();
+      allow list: if isPesagemAdmin();
+      allow update: if isPesagemAdmin();
+      allow delete: if isPesagemAdmin() && uid != request.auth.uid;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
