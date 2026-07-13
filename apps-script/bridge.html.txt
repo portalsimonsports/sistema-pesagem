@@ -2,53 +2,59 @@
 <html lang="pt-BR">
 <head>
   <base target="_top">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PSS Pesagem — Bridge</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PSS Pesagem — Ponte segura</title>
 </head>
 <body>
 <script>
 (() => {
-  "use strict";
+  'use strict';
 
-  const ALLOWED_ORIGINS = new Set([
-    "https://portalsimonsports.github.io",
-    "https://pesagem.portalsimonsports.com"
-  ]);
+  const ALLOWED_ORIGINS = [
+    'https://portalsimonsports.github.io'
+  ];
 
-  function send(target, message) {
-    try {
-      target.postMessage(message, "*");
-    } catch (err) {}
+  function isAllowed(origin) {
+    return ALLOWED_ORIGINS.includes(String(origin || ''));
   }
 
-  window.addEventListener("message", event => {
-    if (!ALLOWED_ORIGINS.has(event.origin)) return;
+  function send(target, origin, data) {
+    try {
+      target.postMessage(data, origin);
+    } catch (_) {}
+  }
+
+  window.addEventListener('message', event => {
+    if (!isAllowed(event.origin)) return;
 
     const data = event.data || {};
-    if (data.type !== "PSS_BRIDGE_CALL" || !data.id || !data.request) return;
+    if (data.type !== 'PSS_BRIDGE_CALL' || !data.id) return;
+
+    const id = String(data.id);
+    const request = data.request || {};
 
     google.script.run
       .withSuccessHandler(result => {
-        send(event.source, {
-          type: "PSS_BRIDGE_RESPONSE",
-          id: data.id,
+        send(event.source, event.origin, {
+          type: 'PSS_BRIDGE_RESPONSE',
+          id,
           ok: true,
           result
         });
       })
       .withFailureHandler(error => {
-        send(event.source, {
-          type: "PSS_BRIDGE_RESPONSE",
-          id: data.id,
+        send(event.source, event.origin, {
+          type: 'PSS_BRIDGE_RESPONSE',
+          id,
           ok: false,
-          error: String(error && error.message ? error.message : error || "Falha na API.")
+          error: String(error && error.message ? error.message : error || 'Falha na API.')
         });
       })
-      .PSS_PESAGEM_bridgeCall(data.request);
+      .PSS_PESAGEM_bridgeCall(request);
   });
 
-  send(window.parent, { type: "PSS_BRIDGE_READY" });
+  window.parent.postMessage({ type: 'PSS_BRIDGE_READY' }, '*');
 })();
 </script>
 </body>
