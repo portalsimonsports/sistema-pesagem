@@ -1,0 +1,293 @@
+/**
+ * Portal SimonSports — Sistema de Pesagem
+ * Integração GitHub Pages + Firebase Authentication + Apps Script
+ *
+ * COMO APLICAR NO PROJETO APPS SCRIPT ATUAL:
+ * 1. Substitua a função doGet existente pela função doGet abaixo.
+ * 2. Adicione todas as demais funções deste arquivo ao projeto.
+ * 3. Crie um arquivo HTML chamado "bridge" e cole o conteúdo de bridge.html.txt.
+ * 4. Implante uma NOVA VERSÃO do mesmo Web App.
+ *
+ * Este módulo reutiliza as funções já existentes:
+ * apiGetPerfis, apiListDevices, apiGetDeviceWeight, apiSalvarPesagem,
+ * apiSalvarMetaAltura, apiGetResumoPerfil, apiAddAgua e apiGetComparativosPerfil.
+ */
+
+const PSS_PESAGEM_FIREBASE_API_KEY = "AIzaSyA8tO_E2s6R9bYnEW6_5skqCUrBSVLLKkw";
+const PSS_PESAGEM_FIREBASE_PROJECT_ID = "pss-bolao-esportivo";
+const PSS_PESAGEM_ACCESS_COLLECTION = "usuarios_pesagem";
+
+/**
+ * SUBSTITUIR a função doGet atual por esta.
+ * Mantém a interface antiga como contingência e adiciona a ponte para o GitHub.
+ */
+function doGet(e) {
+  ensureBase_();
+
+  const mode = String(e && e.parameter && e.parameter.mode || "").trim().toLowerCase();
+
+  if (mode === "bridge") {
+    return HtmlService.createHtmlOutputFromFile("bridge")
+      .setTitle("PSS Pesagem — Bridge")
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+      .addMetaTag("viewport", "width=device-width, initial-scale=1");
+  }
+
+  const t = HtmlService.createTemplateFromFile("index");
+  t.title = (typeof APP_TITLE !== "undefined" && APP_TITLE) ? APP_TITLE : "PSS — Pesagem";
+
+  return t.evaluate()
+    .setTitle(t.title)
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag("viewport", "width=device-width, initial-scale=1, maximum-scale=1");
+}
+
+/**
+ * Ponto único chamado pela página bridge.html.
+ * A autenticação e a autorização são verificadas no servidor antes de acessar a planilha.
+ */
+function PSS_PESAGEM_bridgeCall(request) {
+  const req = request || {};
+  const token = String(req.token || "").trim();
+  const action = String(req.action || "").trim();
+  const payload = (req.payload && typeof req.payload === "object") ? req.payload : {};
+
+  if (!token) throw new Error("Token Firebase ausente.");
+  if (!action) throw new Error("Ação ausente.");
+
+  const authUser = PSS_PESAGEM_validarFirebaseToken_(token);
+  const access = PSS_PESAGEM_obterAcessoFirestore_(token, authUser.uid);
+
+  if (!access || access.ativo !== true) {
+    throw new Error("Usuário não autorizado ou bloqueado.");
+  }
+
+  const allowedActions = {
+    apiGetPerfis: true,
+    apiListDevices: true,
+    apiGetDeviceWeight: true,
+    apiSalvarPesagem: true,
+    apiSalvarMetaAltura: true,
+    apiGetResumoPerfil: true,
+    apiAddAgua: true,
+    apiGetComparativosPerfil: true
+  };
+
+  if (!allowedActions[action]) {
+    throw new Error("Ação não permitida: " + action);
+  }
+
+  const secret = (typeof SECRET !== "undefined") ? SECRET : "";
+  const isAdmin = access.admin === true;
+  const allowedProfiles = Array.isArray(access.perfis)
+    ? access.perfis.map(function(v) { return String(v || "").trim(); }).filter(String)
+    : [];
+  const allProfiles = isAdmin || allowedProfiles.indexOf("*") >= 0;
+
+  if (action === "apiGetPerfis") {
+    const rows = apiGetPerfis(secret) || [];
+    if (allProfiles) return rows;
+
+    const allowedMap = {};
+    allowedProfiles.forEach(function(name) {
+      allowedMap[PSS_PESAGEM_norm_(name)] = true;
+    });
+
+    return rows.filter(function(row) {
+      return allowedMap[PSS_PESAGEM_norm_(row && row.nome)] === true;
+    });
+  }
+
+  if (PSS_PESAGEM_actionUsesProfile_(action)) {
+    const profile = String(payload.perfil || "").trim();
+    if (!profile) throw new Error("Perfil obrigatório.");
+
+    if (!allProfiles) {
+      const permitted = allowedProfiles.some(function(name) {
+        return PSS_PESAGEM_norm_(name) === PSS_PESAGEM_norm_(profile);
+      });
+      if (!permitted) throw new Error("Perfil não autorizado para este usuário.");
+    }
+  }
+
+  const p = Object.assign({}, payload, { secret: secret });
+
+  switch (action) {
+    case "apiListDevices":
+      return apiListDevices(p);
+    case "apiGetDeviceWeight":
+      return apiGetDeviceWeight(p);
+    case "apiSalvarPesagem":
+      return apiSalvarPesagem(p);
+    case "apiSalvarMetaAltura":
+      return apiSalvarMetaAltura(p);
+    case "apiGetResumoPerfil":
+      return apiGetResumoPerfil(p);
+    case "apiAddAgua":
+      return apiAddAgua(p);
+    case "apiGetComparativosPerfil":
+      return apiGetComparativosPerfil(p);
+    default:
+      throw new Error("Ação não implementada.");
+  }
+}
+
+function PSS_PESAGEM_actionUsesProfile_(action) {
+  return [
+    "apiSalvarPesagem",
+    "apiSalvarMetaAltura",
+    "apiGetResumoPerfil",
+    "apiAddAgua",
+    "apiGetComparativosPerfil"
+  ].indexOf(String(action || "")) >= 0;
+}
+
+/**
+ * Valida o Firebase ID Token pelo endpoint oficial do Identity Toolkit.
+ */
+function PSS_PESAGEM_validarFirebaseToken_(idToken) {
+  const url = "https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=" +
+    encodeURIComponent(PSS_PESAGEM_FIREBASE_API_KEY);
+
+  const response = UrlFetchApp.fetch(url, {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify({ idToken: idToken }),
+    muteHttpExceptions: true
+  });
+
+  const status = response.getResponseCode();
+  let data = {};
+
+  try {
+    data = JSON.parse(response.getContentText() || "{}");
+  } catch (err) {
+    throw new Error("Resposta inválida do Firebase Authentication.");
+  }
+
+  if (status < 200 || status >= 300 || !data.users || !data.users.length) {
+    throw new Error("Sessão Firebase inválida ou expirada.");
+  }
+
+  const user = data.users[0] || {};
+  const uid = String(user.localId || "").trim();
+  const email = String(user.email || "").trim().toLowerCase();
+
+  if (!uid || !email) throw new Error("Usuário Firebase incompleto.");
+
+  return { uid: uid, email: email };
+}
+
+/**
+ * Busca o documento usuarios_pesagem/{uid} usando o token do próprio usuário.
+ * As regras do Firestore continuam sendo aplicadas.
+ */
+function PSS_PESAGEM_obterAcessoFirestore_(idToken, uid) {
+  const path = "https://firestore.googleapis.com/v1/projects/" +
+    encodeURIComponent(PSS_PESAGEM_FIREBASE_PROJECT_ID) +
+    "/databases/(default)/documents/" +
+    encodeURIComponent(PSS_PESAGEM_ACCESS_COLLECTION) + "/" +
+    encodeURIComponent(uid);
+
+  const response = UrlFetchApp.fetch(path, {
+    method: "get",
+    headers: { Authorization: "Bearer " + idToken },
+    muteHttpExceptions: true
+  });
+
+  const status = response.getResponseCode();
+
+  if (status === 404) return null;
+  if (status < 200 || status >= 300) {
+    throw new Error("Não foi possível validar a autorização no Firestore.");
+  }
+
+  let document = {};
+  try {
+    document = JSON.parse(response.getContentText() || "{}");
+  } catch (err) {
+    throw new Error("Documento de autorização inválido.");
+  }
+
+  const fields = document.fields || {};
+  const out = {};
+
+  Object.keys(fields).forEach(function(key) {
+    out[key] = PSS_PESAGEM_firestoreValue_(fields[key]);
+  });
+
+  return out;
+}
+
+function PSS_PESAGEM_firestoreValue_(value) {
+  const v = value || {};
+
+  if (Object.prototype.hasOwnProperty.call(v, "nullValue")) return null;
+  if (Object.prototype.hasOwnProperty.call(v, "stringValue")) return v.stringValue;
+  if (Object.prototype.hasOwnProperty.call(v, "booleanValue")) return v.booleanValue === true;
+  if (Object.prototype.hasOwnProperty.call(v, "integerValue")) return Number(v.integerValue);
+  if (Object.prototype.hasOwnProperty.call(v, "doubleValue")) return Number(v.doubleValue);
+  if (Object.prototype.hasOwnProperty.call(v, "timestampValue")) return v.timestampValue;
+
+  if (v.arrayValue) {
+    const values = v.arrayValue.values || [];
+    return values.map(PSS_PESAGEM_firestoreValue_);
+  }
+
+  if (v.mapValue) {
+    const result = {};
+    const fields = v.mapValue.fields || {};
+    Object.keys(fields).forEach(function(key) {
+      result[key] = PSS_PESAGEM_firestoreValue_(fields[key]);
+    });
+    return result;
+  }
+
+  return null;
+}
+
+function PSS_PESAGEM_norm_(value) {
+  let text = String(value || "").trim().toLowerCase();
+  try {
+    text = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  } catch (err) {}
+  return text.replace(/\s+/g, " ");
+}
+
+/**
+ * Teste manual no editor do Apps Script.
+ * Não exige usuário autenticado; apenas confirma que as dependências do projeto existem.
+ */
+function PSS_PESAGEM_DIAGNOSTICAR_BRIDGE() {
+  const required = [
+    "apiGetPerfis",
+    "apiListDevices",
+    "apiGetDeviceWeight",
+    "apiSalvarPesagem",
+    "apiSalvarMetaAltura",
+    "apiGetResumoPerfil",
+    "apiAddAgua",
+    "apiGetComparativosPerfil"
+  ];
+
+  const missing = required.filter(function(name) {
+    try {
+      return typeof this[name] !== "function";
+    } catch (err) {
+      return true;
+    }
+  });
+
+  const result = {
+    ok: missing.length === 0,
+    firebaseProject: PSS_PESAGEM_FIREBASE_PROJECT_ID,
+    collection: PSS_PESAGEM_ACCESS_COLLECTION,
+    funcoesAusentes: missing,
+    observacao: missing.length
+      ? "Existem funções ausentes no projeto."
+      : "Bridge pronta para implantação."
+  };
+
+  Logger.log(JSON.stringify(result, null, 2));
+  return result;
+}
