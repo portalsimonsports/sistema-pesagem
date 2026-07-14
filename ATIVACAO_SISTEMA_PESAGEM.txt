@@ -1,35 +1,101 @@
 PORTAL SIMONSPORTS — SISTEMA DE PESAGEM
-ATIVAÇÃO DO ACESSO PELA PLANILHA + FIREBASE
-Versão: 13/07/2026
+ACESSO POR CÓDIGO TEMPORÁRIO ENVIADO POR E-MAIL
+Versão: V2026.07.14_OTP_EMAIL_PLANILHA
 
-1. No Apps Script, substitua todo o GS pelo arquivo completo entregue no ChatGPT:
-CODE_GS_PESAGEM_FIREBASE_ACESSO_COMPLETO_13-07-2026.txt
+ARQUITETURA
+- Frontend: GitHub Pages
+- Backend: Google Apps Script
+- Dados e permissões: Google Sheets
+- Autenticação: código temporário de 6 dígitos enviado por e-mail
+- Sessão: 6 horas
+- Firebase: não utilizado
 
-2. Crie ou substitua o arquivo HTML chamado bridge com o conteúdo de:
-BRIDGE_HTML_PESAGEM_FIREBASE_13-07-2026.txt
+1. APPS SCRIPT
+Substitua todo o conteúdo atual do Code.gs pelo arquivo:
+CODE_GS_PESAGEM_OTP_EMAIL_COMPLETO_14-07-2026.txt
 
-3. Execute uma vez:
-MIGRAR_ESTRUTURA_USUARIOS_ACESSO
+Salve e execute manualmente:
+CONFIGURAR_SISTEMA_PESAGEM_OTP
 
-A aba USUARIOS_ACESSO passará a usar:
-ATIVO | NOME | EMAIL | CODIGO_ACESSO | PERFIL_ACESSO | SETOR | PERMISSAO_PESAGEM | PERMISSAO_CONFIG | UID_FIREBASE | ULTIMO_ACESSO | OBS
+Aceite as autorizações solicitadas pelo Google, principalmente acesso à planilha e envio de e-mail.
 
-4. Preencha EMAIL e mantenha CODIGO_ACESSO com no mínimo 6 caracteres.
+2. ABA USUARIOS_ACESSO
+A função de configuração preserva as colunas existentes e acrescenta, quando ausentes:
+- EMAIL
+- PERFIS_PERMITIDOS
 
-5. No Firebase Authentication, ative E-mail/senha.
+Campos usados pelo sistema:
+ATIVO
+NOME
+EMAIL
+PERFIL_ACESSO
+SETOR
+PERMISSAO_PESAGEM
+PERMISSAO_CONFIG
+PERFIS_PERMITIDOS
+ULTIMO_ACESSO
+OBS
 
-6. No Apps Script, implante uma nova versão do Web App mantendo o mesmo endereço /exec.
+A coluna antiga CODIGO_ACESSO pode permanecer, mas não é utilizada no login por e-mail.
 
-7. Execute:
-SINCRONIZAR_USUARIOS_FIREBASE
+3. PERMISSÕES
+PERFIL_ACESSO:
+- ADMIN: acesso a todos os perfis, gravação e configurações
+- OPERADOR ou EDITOR: consulta e gravação nos perfis permitidos
+- VIEWER ou CONSULTA: somente consulta
 
-8. Para diagnóstico, execute:
-DIAGNOSTICAR_ACESSO_FIREBASE_PESAGEM
+PERMISSAO_PESAGEM:
+- SIM: permite entrar no sistema
+- NÃO: bloqueia o acesso
 
-Regras:
-- ADMIN visualiza todos os perfis.
-- OPERADOR visualiza o perfil cujo nome corresponde ao campo NOME.
-- PERMISSAO_PESAGEM controla pesagem, água e histórico.
-- PERMISSAO_CONFIG controla meta, altura e administração de acessos.
-- O login valida a planilha, cria ou valida a conta Firebase e grava UID_FIREBASE e ULTIMO_ACESSO.
-- Não altere CODIGO_ACESSO depois da primeira sincronização sem também redefinir a senha no Firebase Authentication.
+PERMISSAO_CONFIG:
+- SIM: permite alterar altura e meta
+- NÃO: não permite alterar configurações
+
+PERFIS_PERMITIDOS:
+- * = todos os perfis
+- Luis Carlos = somente esse perfil
+- Luis Carlos, Daniela = vários perfis
+- Se ficar vazio para OPERADOR/VIEWER, o sistema usa o conteúdo da coluna NOME como perfil padrão.
+
+4. PREENCHER E-MAILS
+Preencha a coluna EMAIL em todas as linhas de usuários ativos.
+O e-mail precisa ser único na aba.
+
+5. DIAGNÓSTICO
+Execute:
+DIAGNOSTICAR_ACESSO_OTP_PESAGEM
+
+Confira no registro de execução:
+- usuários ativos com e-mail;
+- usuários sem e-mail;
+- perfis e permissões reconhecidos.
+
+6. PUBLICAR NOVA VERSÃO DO WEB APP
+No Apps Script:
+Implantar > Gerenciar implantações > Editar
+
+Selecione uma nova versão e mantenha:
+- Executar como: proprietário do projeto
+- Quem pode acessar: qualquer pessoa
+
+Mantenha a mesma URL terminada em /exec, pois ela já está configurada no GitHub.
+
+7. TESTE
+Abra:
+https://portalsimonsports.github.io/sistema-pesagem/
+
+Fluxo:
+1. Informe um e-mail cadastrado.
+2. Clique em Enviar código.
+3. Consulte o e-mail.
+4. Digite o código de 6 dígitos.
+5. Clique em Validar e entrar.
+
+O código expira em 10 minutos, possui limite de tentativas e é invalidado após o uso.
+
+8. AVISO DE ACESSO AOS USUÁRIOS
+Opcionalmente, execute:
+ENVIAR_LINK_ACESSO_USUARIOS_PESAGEM
+
+Essa função envia o link permanente do sistema aos usuários autorizados. O código temporário continua sendo solicitado no próprio site.
