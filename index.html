@@ -8,7 +8,7 @@
   <meta name="robots" content="noindex,nofollow">
   <title>PSS — Sistema de Pesagem</title>
 
-  <link href="assets/styles.css?v=20260714otp1" rel="stylesheet">
+  <link href="assets/styles.css?v=20260727mobile2" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -60,6 +60,17 @@
       </div>
 
       <div class="notice hidden" id="loginMsg" style="margin-top:14px"></div>
+
+      <div class="notice error hidden" id="connectionFallback" style="margin-top:14px">
+        <b>O navegador interno bloqueou a conexão com o Apps Script.</b>
+        <div style="margin-top:6px;line-height:1.45">
+          No Android, abra esta mesma página no Chrome para continuar normalmente.
+        </div>
+        <div class="login-actions" style="margin-top:10px">
+          <button class="btn" id="btnOpenChrome" type="button">Abrir no Chrome</button>
+          <button class="btn secondary" id="btnRetryApi" type="button">Tentar novamente</button>
+        </div>
+      </div>
 
       <div class="login-foot">
         O código possui 6 dígitos, expira automaticamente e não é gravado no GitHub.
@@ -325,6 +336,96 @@
     </section>
   </main>
 
-  <script src="assets/app.js?v=20260714otp1"></script>
+  <script>
+    (() => {
+      'use strict';
+
+      const API_URL = 'https://script.google.com/macros/s/AKfycbzM4o4WTSWrRAxronWPheQVaUIZnYMNIcJrz6ivOzV2NtvO3JuGRuSH5CHCIBfvRBBdmw/exec';
+      const SITE_URL = 'https://portalsimonsports.github.io/sistema-pesagem/';
+      const externalMode = new URLSearchParams(location.search).get('external') === '1';
+      const fallbackBox = document.getElementById('connectionFallback');
+      const loginMsg = document.getElementById('loginMsg');
+      let recoveryStarted = false;
+
+      function isAndroid() {
+        return /Android/i.test(navigator.userAgent || '');
+      }
+
+      function openChrome() {
+        const target = `${SITE_URL}?external=1&v=${Date.now()}`;
+
+        if (isAndroid()) {
+          const intentTarget = target.replace(/^https:\/\//i, '');
+          const fallbackUrl = encodeURIComponent(target);
+          location.href = `intent://${intentTarget}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fallbackUrl};end`;
+          return;
+        }
+
+        const win = window.open(target, '_blank', 'noopener,noreferrer');
+        if (!win) location.href = target;
+      }
+
+      function showRecovery(autoOpen) {
+        if (fallbackBox) fallbackBox.classList.remove('hidden');
+
+        if (autoOpen && isAndroid() && !externalMode && !recoveryStarted) {
+          recoveryStarted = true;
+          window.setTimeout(openChrome, 650);
+        }
+      }
+
+      document.getElementById('btnOpenChrome').onclick = openChrome;
+      document.getElementById('btnRetryApi').onclick = () => location.reload();
+
+      if (loginMsg) {
+        new MutationObserver(() => {
+          const text = String(loginMsg.textContent || '');
+          if (/não foi possível conectar ao apps script|api demorou para responder|conectar ao apps script/i.test(text)) {
+            showRecovery(true);
+          }
+        }).observe(loginMsg, {
+          childList: true,
+          subtree: true,
+          characterData: true,
+          attributes: true
+        });
+      }
+
+      if (externalMode) return;
+
+      const callbackName = `__pssPreflight_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const script = document.createElement('script');
+      let finished = false;
+
+      function cleanup() {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timer);
+        try { delete window[callbackName]; } catch (_) {}
+        script.remove();
+      }
+
+      function fail() {
+        cleanup();
+        showRecovery(true);
+      }
+
+      window[callbackName] = response => {
+        if (!response || response.ok !== true) {
+          fail();
+          return;
+        }
+        cleanup();
+      };
+
+      script.onerror = fail;
+      script.src = `${API_URL}?action=health&callback=${encodeURIComponent(callbackName)}&_=${Date.now()}`;
+      document.head.appendChild(script);
+
+      const timer = window.setTimeout(fail, 8000);
+    })();
+  </script>
+
+  <script src="assets/app.js?v=20260727mobile2"></script>
 </body>
 </html>
