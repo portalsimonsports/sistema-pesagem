@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#123d72"/>
+      <stop offset="1" stop-color="#071426"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="42" fill="url(#g)"/>
+  <circle cx="96" cy="73" r="42" fill="#0b1f3a" stroke="#69a8ff" stroke-width="5"/>
+  <path d="M64 119h64c15 0 27 12 27 27v6H37v-6c0-15 12-27 27-27Z" fill="#0b1f3a" stroke="#69a8ff" stroke-width="5"/>
+  <path d="M74 73a22 22 0 0 1 44 0" fill="none" stroke="#e8edf5" stroke-width="6" stroke-linecap="round"/>
+  <path d="M96 73l13-13" stroke="#34d399" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="96" cy="73" r="5" fill="#34d399"/>
+  <text x="96" y="171" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#ffffff">PSS</text>
+</svg>
